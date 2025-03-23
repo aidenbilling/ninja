@@ -1,8 +1,9 @@
 # game.py
 import pygame
 from src.player import Player
-from src.platform import Platform
+from src.game_platform import Platform
 from src.sword import Sword
+from src.enemies import Ninja
 
 class Game:
     def __init__(self):
@@ -27,6 +28,7 @@ class Game:
             Platform(0, self.HEIGHT - 20, self.WIDTH, 20)  # Floor
         ]
         self.sword = Sword(350, 350)  # Sword placed on the ground
+        self.ninja = Ninja(100, 100, 50, 50, 2)
 
     def run(self):
         # Game loop
@@ -51,6 +53,9 @@ class Game:
         # Update the player and check interactions
         self.player.update(self.platforms, self.sword)
 
+        self.ninja.update(self.platforms, self.player)  # Update ninja
+        self.ninja.follow_player(self.player)
+
     def draw(self):
         # Fill the screen with the background color
         self.screen.fill(self.WHITE)
@@ -65,3 +70,5 @@ class Game:
 
         # Draw the player
         self.player.draw(self.screen)
+
+        self.ninja.draw(self.screen)
