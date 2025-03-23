@@ -73,7 +73,10 @@ class Player:
         self.apply_gravity()
         self.check_collision(platforms)
         self.pick_up_sword(sword)  # Check if player picks up the sword
-    
+
+        self.rect.x = max(0, min(self.rect.x, 800 - self.rect.width))  # Clamping horizontally (800px width)
+        self.rect.y = max(0, min(self.rect.y, 600 - self.rect.height))  # Clamping vertically (600px height)
+
     def draw_hotbar(self, screen):
         for i in range(len(self.hotbar)):
             x = 10 + i * 60  # Position hotbar slots
