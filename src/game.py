@@ -1,3 +1,4 @@
+# game.py
 import pygame
 from src.player import Player
 from src.game_platform import Platform
@@ -10,7 +11,7 @@ class Game:
         self.WIDTH, self.HEIGHT = 800, 600
         self.FPS = 60
         self.WHITE = (255, 255, 255)
-        self.colour = (0, 0, 255)
+        
         # Create the screen
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption("Ninja Man Prototype")
@@ -40,19 +41,18 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
 
-            keys = pygame.key.get_pressed()
-            
             # Update game objects
-            self.update(keys)
+            self.update()
 
             # Draw everything to the screen
             self.draw()
 
             pygame.display.flip()  # Refresh screen
 
-    def update(self, keys):
+    def update(self):
         # Update the player and check interactions
-        self.player.update(self.platforms, keys)
+        self.player.update(self.platforms, self.sword)
+
         self.ninja.update(self.platforms, self.player)  # Update ninja
         self.ninja.follow_player(self.player)
 
@@ -69,6 +69,6 @@ class Game:
             self.sword.draw(self.screen)
 
         # Draw the player
-        self.player.draw(self.screen, self.colour)
+        self.player.draw(self.screen)
 
         self.ninja.draw(self.screen)
