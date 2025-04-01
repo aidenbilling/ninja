@@ -12,7 +12,7 @@ class Player:
         self.on_ground = False
         self.hotbar = []  # Holds items like the sword
 
-        self.hotbar = [None] * 3  # Hotbar with 3 slots (expandable)
+        self.hotbar = [None] * 5  # Hotbar with 3 slots (expandable)
         self.selected_slot = 0  # Index of selected hotbar slot
         self.holding_item = None  # Currently held item
  
@@ -27,7 +27,7 @@ class Player:
         if keys[pygame.K_UP] and self.on_ground:
             self.vel_y = self.jump_power  # Jump if on the ground
 
-        for i in range(3):  # Check keys K_1 to K_3
+        for i in range(5):  # Check keys K_1 to K_3
             if keys[pygame.K_1 + i]:  
                 self.selected_slot = i
                 self.holding_item = self.hotbar[i]  # Update held item
