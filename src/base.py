@@ -39,5 +39,5 @@ class BaseEntity:
         self.apply_gravity()
         self.check_collision(platforms)
 
-    def draw(self, screen, color):
-        pygame.draw.rect(screen, color, self.rect)
+    def draw(self, screen, colour):
+        pygame.draw.rect(screen, colour, self.rect)

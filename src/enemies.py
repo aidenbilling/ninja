@@ -2,8 +2,8 @@ import pygame
 from src.base import BaseEntity
 
 class Enemy(BaseEntity):
-    def __init__(self, x, y):
-        super().__init__(x, y, 40, 60, 2)
+    def __init__(self, x, y, width=40, height=60, speed=2):
+        super().__init__(x, y, width, height, speed)
         self.vel_x = self.speed  # Enemies move automatically
 
     def update(self, platforms):
@@ -14,9 +14,9 @@ class Enemy(BaseEntity):
                 self.vel_x *= -1
 
 class Ninja(Enemy):
-    def __init__(self, x, y):
-        super().__init__(x, y)
-        self.image = pygame.Surface((40, 60))
+    def __init__(self, x, y, width=40, height=60, speed=2):
+        super().__init__(x, y, width, height, speed)
+        self.image = pygame.Surface((width, height))
         self.image.fill((0, 255, 0))  # Green ninja
 
     def follow_player(self, player):
