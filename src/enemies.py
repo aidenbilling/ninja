@@ -1,5 +1,5 @@
 import pygame
-from base_entity import BaseEntity
+from src.base import BaseEntity
 
 class Enemy(BaseEntity):
     def __init__(self, x, y):
