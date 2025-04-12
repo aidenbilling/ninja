@@ -2,7 +2,7 @@
 import pygame
 from src.game import Game
 
-# Initialize Pygame
+# Initialize Pygamew
 pygame.init()
 
 # Create the game instance

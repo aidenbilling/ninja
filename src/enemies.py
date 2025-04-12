@@ -59,7 +59,7 @@ class Ninja(Enemy):  # Inherit from the Enemy class
     def __init__(self, x, y, width, height, speed):
         super().__init__(x, y, width, height, speed)
         self.image = pygame.Surface((width, height))
-        self.image.fill((0, 255, 0))  
+        self.image.fill((255, 255, 0))  
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def update(self, platforms, player):
@@ -76,5 +76,6 @@ class Ninja(Enemy):  # Inherit from the Enemy class
         else:
             self.vel_x = 0  # Stop moving if ninja is aligned with the player
 
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
+    def draw(self, screen, camera):
+        offset_rect = camera.apply(self)
+        screen.blit(self.image, offset_rect)
