@@ -21,9 +21,8 @@ class Game:
         self.menu_options = ["Play", "Options", "Exit"]
         self.selected_option = 0
 
-        # Platform at the bottom of the screen
         self.platforms = [
-            Platform(0, self.HEIGHT - 20, self.WIDTH, 20),  # Floor platform
+            Platform(0, self.HEIGHT - 20, self.WIDTH, 20),
             Platform(100, 400, 200, 20),
             Platform(400, 500, 300, 20),
             Platform(800, 600, 250, 20),
@@ -32,8 +31,6 @@ class Game:
         self.player = Player(self.WIDTH // 2, self.HEIGHT - 100)
         self.sword = Sword(350, 350)
         self.ninja = Ninja(100, 100, 50, 50, 2)
-
-        self.hotbar = [None, None, None]
 
     def load_level(self, level_layout):
         self.platforms.clear()
@@ -50,8 +47,6 @@ class Game:
             self.handle_menu(keys)
         else:
             self.player.update(keys, self.platforms, self.sword)
-            self.handle_sword_pickup()
-            self.handle_weapon_switching(keys)
             self.ninja.update(self.platforms, self.player)
 
     def handle_menu(self, keys):
@@ -69,22 +64,6 @@ class Game:
                 pygame.quit()
                 quit()
 
-    def handle_sword_pickup(self):
-        if self.sword and self.player.rect.colliderect(self.sword.rect):
-            for i in range(3):
-                if self.hotbar[i] is None:
-                    self.hotbar[i] = self.sword
-                    self.sword.rect.x, self.sword.rect.y = -100, -100  # Hide sword after pickup
-                    break
-
-    def handle_weapon_switching(self, keys):
-        if keys[pygame.K_1] and self.hotbar[0]:
-            self.player.equip_weapon(self.hotbar[0], 0)
-        if keys[pygame.K_2] and self.hotbar[1]:
-            self.player.equip_weapon(self.hotbar[1], 1)
-        if keys[pygame.K_3] and self.hotbar[2]:
-            self.player.equip_weapon(self.hotbar[2], 2)
-
     def draw(self):
         self.screen.fill(self.WHITE)
 
@@ -92,15 +71,17 @@ class Game:
             self.draw_menu()
         else:
             self.camera.update(self.player)
+
             for platform in self.platforms:
                 platform.draw(self.screen, self.camera)
 
-            self.player.draw(self.screen, self.camera)
-            if self.sword:
+            # Draw sword only if it hasn't been picked up
+            if self.sword and not self.sword.picked_up:
                 self.sword.draw(self.screen, self.camera)
 
+            self.player.draw(self.screen, self.camera)
             self.ninja.draw(self.screen, self.camera)
-            self.draw_hotbar()
+            self.player.draw_hotbar(self.screen)
 
         pygame.display.flip()
 
@@ -114,18 +95,6 @@ class Game:
             color = (255, 0, 0) if i == self.selected_option else (0, 0, 0)
             option_text = option_font.render(option, True, color)
             self.screen.blit(option_text, (self.WIDTH // 2 - option_text.get_width() // 2, 200 + i * 50))
-
-    def draw_hotbar(self):
-        font = pygame.font.SysFont(None, 30)
-        for i, weapon in enumerate(self.hotbar):
-            rect = pygame.Rect(10 + i * 60, self.HEIGHT - 50, 50, 40)
-            if weapon:
-                pygame.draw.rect(self.screen, (0, 0, 0), rect, 2)
-                self.screen.blit(weapon.image, rect.topleft)
-            else:
-                pygame.draw.rect(self.screen, (200, 200, 200), rect, 2)
-                text = font.render("Empty", True, (0, 0, 0))
-                self.screen.blit(text, (rect.x + 5, rect.y + 5))
 
     def run(self):
         running = True
