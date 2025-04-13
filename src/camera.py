@@ -20,6 +20,7 @@ class Camera:
         x = -target.rect.centerx + int(self.width / 2)
         y = -target.rect.centery + int(self.height / 2)
 
+        # Camera follows the player but stays within bounds
         x = min(0, x)
         y = min(0, y)
         x = max(-(self.map_width - self.width), x)

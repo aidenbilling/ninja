@@ -5,7 +5,7 @@ from src.game import Game
 # Initialize Pygamew
 pygame.init()
 
-# Create the game instance
+# Create the gamex instance
 game = Game()
 
 # Run the game
