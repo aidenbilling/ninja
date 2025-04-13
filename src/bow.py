@@ -1,3 +1,4 @@
+# bow.py
 import pygame
 
 class Projectile:
@@ -19,6 +20,7 @@ class Projectile:
         self.rect.x += self.vel.x
         self.rect.y += self.vel.y
 
+        # Check for collision with platforms
         for platform in platforms:
             if self.rect.colliderect(platform.rect):
                 self.alive = False  # Mark for removal on collision
@@ -30,38 +32,26 @@ class Projectile:
 
     def check_collision(self, player):
         if self.rect.colliderect(player.rect):
-            player.health -= 10
-            self.alive = False  # Destroy the projectile when hitting the player
+            player.health -= 10  # Damage the player
+            self.alive = False  # Destroy the projectile
             return True
         return False
 
-class Bow:
-    def __init__(self):
-        self.image = pygame.Surface((20, 20))
-        self.image.fill((139, 69, 19))  # Brown bow color
-        self.projectile_speed = 10
+
+class Bow(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__()
+        self.image = pygame.Surface((40, 40))  # Placeholder size for the Bow
+        self.image.fill((255, 0, 255))  # Placeholder color for the Bow
+        self.rect = self.image.get_rect()
+        self.rect.topleft = pos  # Set position using a tuple (x, y)
+        self.projectile_speed = 10  # Speed of the projectile
 
     def shoot(self, player, projectiles_group):
-        direction = player.facing  # Assuming 'facing' is "left" or "right"
-        projectile = Projectile(player.rect.centerx, player.rect.centery, direction, self.projectile_speed)
+        direction = player.facing_direction  # Get the direction player is facing
+        # Determine target coordinates for the projectile
+        target_x = player.rect.centerx + direction * 100  # Fire 100 units ahead in facing direction
+        target_y = player.rect.centery
+        # Create and add the projectile to the projectiles group
+        projectile = Projectile(player.rect.centerx, player.rect.centery, target_x, target_y, self.projectile_speed)
         projectiles_group.add(projectile)
-
-
-class BowDrop:
-    def __init__(self, player):
-        self.player = player
-        # Check if there is an empty slot in the player's hotbar or inventory
-        if self.add_bow_to_inventory():
-            print("Bow added to inventory!")
-        else:
-            print("No empty slots in the inventory.")
-
-    def add_bow_to_inventory(self):
-        # Check for an empty slot and add the bow to the inventory
-        for i in range(len(self.player.hotbar)):
-            if self.player.hotbar[i] is None:  # Assuming None means empty slot
-                self.player.hotbar[i] = "Bow"  # Add a bow to the hotbar
-                return True
-        return False
-
-

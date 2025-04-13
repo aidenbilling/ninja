@@ -1,6 +1,6 @@
 import pygame
 from pygame.rect import Rect
-from src.bow import Projectile, BowDrop
+from src.bow import Projectile
 import random
 from src.player import Player
 
@@ -152,23 +152,12 @@ class Archer(Enemy):
         self.last_shot_time = pygame.time.get_ticks()
 
     def kill(self, player):
-        print("Archer is being killed!")  # Debugging line
-        print(f"Player is: {player}")  # Debugging line
-        chance = random.random()
-        print(f"Drop chance: {chance}")  # Debugging line
 
-        if player is None:
-            print("No player found, bow won't be added.")
-            return  # If player is None, return early
-
-        if chance < 0.25:
-            bow_added = BowDrop(player)  # Passing player to BowDrop
-            if bow_added:
-                print("Archer dropped a bow! Added to hotbar.")
+        if random.random() <= 0.25:  # 25% drop chance
+            if player.try_add_bow():
+                print("Bow drop successful!")
             else:
-                print("Archer dropped a bow, but inventory was full.")
-        else:
-            print("Archer did not drop a bow.")
+                print("Player inventory full. Bow not added.")
 
 
 

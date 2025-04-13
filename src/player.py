@@ -1,6 +1,6 @@
 import pygame
 from src.sword import Sword
-from src.bow import BowDrop, Projectile
+from src.bow import Projectile, Bow
 import time  # Import the time module to check the time difference
 
 class Player(pygame.sprite.Sprite):
@@ -32,8 +32,11 @@ class Player(pygame.sprite.Sprite):
         self.facing_direction = 1  # Default facing right
         self.has_bow = False  # Track if the player has a bow
 
-        # Cooldown management for sword attacks
-        self.last_attack_time = 0  # Initialize last attack time to 0
+        # Cooldown management for bow attacks
+        self.last_shot_time = 0  # Initialize last shot time to 0
+
+        # Create a sprite group for projectiles
+        self.projectiles = pygame.sprite.Group()
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
@@ -63,11 +66,12 @@ class Player(pygame.sprite.Sprite):
         # Check if enough time has passed for sword attack (0.3 second cooldown)
         current_time = time.time()  # Get the current time in seconds
         if isinstance(self.holding_item, Sword) and keys[pygame.K_SPACE]:
-            if current_time - self.last_attack_time >= 0.3:  # 0.3 second cooldown
+            if current_time - self.last_shot_time >= 0.3:  # 0.3 second cooldown
                 self.sword_attack(enemies)
-                self.last_attack_time = current_time  # Update the last attack time
+                self.last_shot_time = current_time  # Update the last attack time
         elif self.has_bow and keys[pygame.K_SPACE]:  # Check if the player has a bow
-            self.bow_attack()
+            if current_time - self.last_shot_time >= 1:  # 1 second cooldown for shooting
+                self.bow_attack()
 
     def sword_attack(self, enemies):
         attack_range = 50  # How far the sword can hit
@@ -76,7 +80,7 @@ class Player(pygame.sprite.Sprite):
 
         for enemy in enemies:
             if attack_rect.colliderect(enemy.rect):
-                enemy.take_damage(10)  # Deal damage to the enemy
+                enemy.take_damage(10, self)  # Deal damage to the enemy
                 print(f"Enemy hit! Remaining health: {enemy.health}")
 
     def bow_attack(self):
@@ -85,9 +89,24 @@ class Player(pygame.sprite.Sprite):
             target_x = self.pos.x + self.facing_direction * 100  # Adjust target for projectile
             target_y = self.pos.y
             speed = 10  # Adjust the speed of the projectile
-            projectile = Projectile(self.pos.x, self.pos.y, target_x, target_y, speed)
-            # You would want to add this projectile to a group or list to update it
+            projectile = Projectile(self.pos.x, self.pos.y, target_x, target_y, speed)  # Correct number of parameters
+            # Add this projectile to a group or list to update it 
             print("Bow attack fired!")
+
+
+    def update_projectiles(self, enemies):
+        # Update all projectiles in the group
+        for projectile in self.projectiles:
+            projectile.update()  # Update the projectile's movement
+
+            # Check for collisions with enemies
+            for enemy in enemies:
+                if projectile.rect.colliderect(enemy.rect):
+                    enemy.take_damage(10, self)  # Deal damage to the enemy
+                    self.projectiles.remove(projectile)  # Remove the projectile
+                    print(f"Enemy hit! Remaining health: {enemy.health}")
+                    if enemy.health <= 0:
+                        print("Enemy is dead!")
 
     def apply_gravity(self):
         self.y_vel += self.gravity
@@ -141,6 +160,17 @@ class Player(pygame.sprite.Sprite):
                             break
 
         self.attack(enemies)
+        self.update_projectiles(enemies)  # Update projectiles
+
+    def try_add_bow(self):
+        for i in range(len(self.hotbar)):
+            if self.hotbar[i] is None:
+                self.hotbar[i] = Bow((0, 0))  # Pass a tuple for position
+                self.has_bow = True
+                print("Bow added to inventory!")
+                return True
+        print("No empty slots for Bow.")
+        return False
 
     def equip_weapon(self, weapon, slot):
         self.holding_item = weapon
@@ -151,6 +181,10 @@ class Player(pygame.sprite.Sprite):
 
         # No sword drawing, removed the code that was drawing the sword
         self.draw_hotbar(screen)
+
+        # Draw projectiles
+        for projectile in self.projectiles:
+            projectile.draw(screen)
 
     def draw_hotbar(self, screen):
         font = pygame.font.SysFont(None, 30)

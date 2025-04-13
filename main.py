@@ -4,7 +4,7 @@ from src.game import Game
 
 # Initialize Pygamew
 pygame.init()
-
+   
 # Create the gamex instance
 game = Game()
 
