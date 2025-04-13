@@ -4,6 +4,7 @@ from src.sword import Sword
 from src.enemies import Ninja
 from src.game_platform import Platform
 from src.camera import Camera
+from src.levels import level_1  # Import level layout from levels.py
 
 class Game:
     def __init__(self):
@@ -21,35 +22,13 @@ class Game:
         self.menu_options = ["Play", "Options", "Exit"]
         self.selected_option = 0
 
-        self.platforms = [
-            Platform(0, self.HEIGHT - 20, self.WIDTH, 20),
-            Platform(100, 400, 200, 20),
-            Platform(400, 500, 300, 20),
-            Platform(800, 600, 250, 20),
-        ]
-
-        self.player = Player(self.WIDTH // 2, self.HEIGHT - 100)
-        self.sword = Sword(350, 350)
-        self.ninja = Ninja(100, 100, 50, 50, 2)
-
-    def load_level(self, level_layout):
-        self.platforms.clear()
-        tile_size = 40
-        for row_index, row in enumerate(level_layout):
-            for col_index, tile in enumerate(row):
-                if tile == "#":
-                    platform = Platform(col_index * tile_size, row_index * tile_size, tile_size, tile_size)
-                    self.platforms.append(platform)
-
-    def update(self):
-        keys = pygame.key.get_pressed()
-        if self.state == "menu":
-            self.handle_menu(keys)
-        else:
-            self.player.update(keys, self.platforms, self.sword)
-            self.ninja.update(self.platforms, self.player)
+        self.platforms = []
+        self.items = []  # List to hold items like sword
+        self.ninjas = []  # List to hold ninja enemies
+        self.player = Player(self.WIDTH // 2, self.HEIGHT - 100)  # Initialize player
 
     def handle_menu(self, keys):
+        """Handle the menu navigation."""
         if keys[pygame.K_UP]:
             self.selected_option = max(0, self.selected_option - 1)
         elif keys[pygame.K_DOWN]:
@@ -57,14 +36,49 @@ class Game:
 
         if keys[pygame.K_RETURN]:
             if self.selected_option == 0:
-                self.state = "playing"
+                self.state = "playing"  # Start the game when "Play" is selected
+                self.load_level(level_1)  # Load the first level when playing
             elif self.selected_option == 1:
                 print("Options menu is not implemented yet.")
             elif self.selected_option == 2:
                 pygame.quit()
                 quit()
 
+    def load_level(self, level_layout):
+        """Load the level layout into the game."""
+        self.platforms.clear()  # Clear previous platforms
+        self.items.clear()  # Clear previous items
+        self.ninjas.clear()  # Clear previous ninjas
+
+        tile_size = 40  # Size of each tile (platform)
+        for row_index, row in enumerate(level_layout):
+            for col_index, tile in enumerate(row):
+                if tile == "#":  # Platform tile
+                    platform = Platform(col_index * tile_size, row_index * tile_size, tile_size, tile_size)
+                    self.platforms.append(platform)
+                elif tile == "@":  # Special tile for sword or other items
+                    sword = Sword(col_index * tile_size, row_index * tile_size)
+                    self.items.append(sword)
+                elif tile == "N":  # Special tile for ninja enemies
+                    ninja = Ninja(col_index * tile_size, row_index * tile_size, 50, 50, 2)
+                    self.ninjas.append(ninja)
+
+        # Place the player on the first platform after loading the level
+        if self.platforms:
+            self.player.rect.bottom = self.platforms[0].rect.top  # Place player on top of the first platform
+
+    def update(self):
+        """Update game objects."""
+        keys = pygame.key.get_pressed()
+        if self.state == "menu":
+            self.handle_menu(keys)  # Call the menu handling
+        else:
+            self.player.update(keys, self.platforms, self.items)
+            for ninja in self.ninjas:
+                ninja.update(self.platforms, self.player)
+
     def draw(self):
+        """Draw game objects."""
         self.screen.fill(self.WHITE)
 
         if self.state == "menu":
@@ -72,20 +86,24 @@ class Game:
         else:
             self.camera.update(self.player)
 
+            # Draw platforms
             for platform in self.platforms:
                 platform.draw(self.screen, self.camera)
 
-            # Draw sword only if it hasn't been picked up
-            if self.sword and not self.sword.picked_up:
-                self.sword.draw(self.screen, self.camera)
+            # Draw items (e.g., sword)
+            for item in self.items:
+                item.draw(self.screen, self.camera)
 
+            # Draw player and ninjas
             self.player.draw(self.screen, self.camera)
-            self.ninja.draw(self.screen, self.camera)
+            for ninja in self.ninjas:
+                ninja.draw(self.screen, self.camera)
             self.player.draw_hotbar(self.screen)
 
         pygame.display.flip()
 
     def draw_menu(self):
+        """Draw the menu screen."""
         font = pygame.font.SysFont(None, 50)
         title_text = font.render("Ninja Man Prototype", True, (0, 0, 0))
         self.screen.blit(title_text, (self.WIDTH // 2 - title_text.get_width() // 2, 100))
@@ -97,6 +115,7 @@ class Game:
             self.screen.blit(option_text, (self.WIDTH // 2 - option_text.get_width() // 2, 200 + i * 50))
 
     def run(self):
+        """Run the game loop."""
         running = True
         while running:
             self.clock.tick(self.FPS)
@@ -111,7 +130,7 @@ class Game:
         pygame.quit()
 
 if __name__ == "__main__":
-    from src.levels import level_1
     game = Game()
-    game.load_level(level_1)
     game.run()
+
+

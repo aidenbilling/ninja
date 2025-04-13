@@ -101,7 +101,7 @@ class Player(pygame.sprite.Sprite):
         # Draw held weapon if any (use the fixed offset for positioning)
         if self.holding_item:
             # Sword will be drawn at a fixed offset relative to the player
-            sword_pos = self.rect.x, self.rect.y
+            sword_pos = (self.rect.centerx + self.weapon_offset[0], self.rect.centery + self.weapon_offset[1])
             # Apply camera transformation to the sword position
             screen.blit(self.holding_item.image, camera.apply_pos(sword_pos))
 
