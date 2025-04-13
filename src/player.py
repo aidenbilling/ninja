@@ -19,8 +19,8 @@ class Player(pygame.sprite.Sprite):
         self.selected_slot = 0
         self.holding_item = None
 
-        # Fixed offset for the sword (relative to the player)
-        self.weapon_offset = (20, -10)  # Adjust this offset to fit your sword's position
+        self.health = 100
+        self.weapon_offset = (20, -10)
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
@@ -33,15 +33,12 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_UP] and self.on_ground:
             self.y_vel = self.jump_power
 
-        # Equip weapon if hotbar slot contains an item
         if keys[pygame.K_1] and self.hotbar[0]:
             self.equip_weapon(self.hotbar[0], 0)
         elif keys[pygame.K_2] and self.hotbar[1]:
             self.equip_weapon(self.hotbar[1], 1)
         elif keys[pygame.K_3] and self.hotbar[2]:
             self.equip_weapon(self.hotbar[2], 2)
-
-        # Switching between slots if empty
         elif keys[pygame.K_1] and not self.hotbar[0]:
             self.equip_weapon(None, 0)
         elif keys[pygame.K_2] and not self.hotbar[1]:
@@ -81,13 +78,12 @@ class Player(pygame.sprite.Sprite):
         self.apply_gravity()
         self.check_collision(platforms)
 
-        # Handle sword pickup
         if sword and not sword.picked_up and self.rect.colliderect(sword.rect):
             for i in range(3):
                 if self.hotbar[i] is None:
                     self.hotbar[i] = sword
                     sword.picked_up = True
-                    self.equip_weapon(sword, i)  # Equip immediately on pickup
+                    self.equip_weapon(sword, i)
                     break
 
     def equip_weapon(self, weapon, slot):
@@ -95,15 +91,13 @@ class Player(pygame.sprite.Sprite):
         self.selected_slot = slot
 
     def draw(self, screen, camera):
-        # Draw the player
         screen.blit(self.image, camera.apply(self))
 
-        # Draw held weapon if any (use the fixed offset for positioning)
         if self.holding_item:
-            # Sword will be drawn at a fixed offset relative to the player
             sword_pos = (self.rect.centerx + self.weapon_offset[0], self.rect.centery + self.weapon_offset[1])
-            # Apply camera transformation to the sword position
             screen.blit(self.holding_item.image, camera.apply_pos(sword_pos))
+
+        self.draw_hotbar(screen)
 
     def draw_hotbar(self, screen):
         font = pygame.font.SysFont(None, 30)
