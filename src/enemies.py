@@ -11,7 +11,7 @@ class Enemy:
         self.on_ground = False
         self.gravity = 0.5
         self.max_speed = 3
-        self.health = 50
+        self.health = 30  # Sword does 10 damage -> 3 hits to kill
         self.drops = []
 
     def apply_gravity(self):
@@ -49,12 +49,23 @@ class Enemy:
         self.move()
         self.check_collisions(platforms)
 
+    def take_damage(self, amount):
+        self.health -= amount
+        if self.health <= 0:
+            self.kill()
+
+    def kill(self):
+        del self
+
 class Ninja(Enemy):
     def __init__(self, x, y, width, height, speed):
         super().__init__(x, y, width, height, speed)
         self.image = pygame.Surface((width, height))
         self.image.fill((255, 255, 0))
         self.rect = self.image.get_rect(topleft=(x, y))
+        self.last_hit_time = -3000  # Makes sure it can hit right away
+        self.hit_cooldown = 3000    # 3 seconds cooldown
+        self.attack_damage = 15     # Deals 15 damage to player
 
     def update(self, platforms, player):
         self.apply_gravity()
@@ -66,7 +77,6 @@ class Ninja(Enemy):
     def follow_player(self, player, platforms):
         line_clear = True
         test_rect = self.rect.copy()
-
         step = 1 if self.rect.centerx < player.rect.centerx else -1
 
         for x in range(self.rect.centerx, player.rect.centerx, step * 5):
@@ -84,8 +94,11 @@ class Ninja(Enemy):
             self.vel_x = 0
 
     def damage_player(self, player):
+        current_time = pygame.time.get_ticks()
         if self.rect.colliderect(player.rect) and player.alive:
-            player.health -= 1
+            if current_time - self.last_hit_time >= self.hit_cooldown:
+                player.health -= self.attack_damage
+                self.last_hit_time = current_time  # Reset cooldown
 
     def draw(self, screen, camera):
         screen.blit(self.image, camera.apply(self))
@@ -112,7 +125,7 @@ class Archer(Enemy):
                 self.shoot(player)
 
         for projectile in self.projectiles[:]:
-            projectile.update(platforms)  # <-- Corrected this line!
+            projectile.update(platforms)
             if projectile.check_collision(player):
                 self.projectiles.remove(projectile)
 
@@ -133,7 +146,6 @@ class Archer(Enemy):
     def can_see_player(self, player, platforms):
         line_clear = True
         test_rect = self.rect.copy()
-
         step = 5 if self.rect.centerx < player.rect.centerx else -5
         for x in range(self.rect.centerx, player.rect.centerx, step):
             test_rect.centerx = x

@@ -27,11 +27,11 @@ class Game:
         self.platforms = []
         self.items = []
         self.ninjas = []
-        self.archers = []  # <-- List for archers
+        self.archers = []
         self.player = Player(self.WIDTH // 2, self.HEIGHT - 100)
 
-        self.levels = [level_1, level_2]  # <-- List of levels
-        self.current_level_index = 0      # <-- Start at level 0
+        self.levels = [level_1, level_2]
+        self.current_level_index = 0
 
     def handle_menu(self, keys):
         if keys[pygame.K_UP]:
@@ -54,7 +54,7 @@ class Game:
         self.platforms.clear()
         self.items.clear()
         self.ninjas.clear()
-        self.archers.clear()  # <-- Clear archers list
+        self.archers.clear()
 
         tile_size = 40
         for row_index, row in enumerate(level_layout):
@@ -70,7 +70,7 @@ class Game:
                     self.items.append(Door(x, y))
                 elif tile == "N":
                     self.ninjas.append(Ninja(x, y, 50, 50, 1))
-                elif tile == "A":  # <-- Place archers
+                elif tile == "A":
                     self.archers.append(Archer(x, y, 50, 50, 1))
 
         if self.platforms:
@@ -82,21 +82,26 @@ class Game:
         if self.state == "menu":
             self.handle_menu(keys)
         elif self.state == "playing":
-            self.player.update(keys, self.platforms, self.items)
+            self.player.update(keys, self.platforms, self.items, self.ninjas + self.archers)
+
+            if keys[pygame.K_SPACE] and self.player.holding_item and isinstance(self.player.holding_item, Sword):
+                self.player.attack(self.ninjas + self.archers)
 
             for item in self.items:
                 if isinstance(item, Door):
                     item.update(self.player)
                     if not item.locked:
-                        self.advance_level()  # <-- Jump to next level!
+                        self.advance_level()
 
-            for ninja in self.ninjas:
+            for ninja in self.ninjas[:]:
                 ninja.update(self.platforms, self.player)
-                if ninja.rect.colliderect(self.player.rect):
-                    self.player.health -= 1
+                if ninja.health <= 0:
+                    self.ninjas.remove(ninja)
 
-            for archer in self.archers:  # <-- Update archers
+            for archer in self.archers[:]:
                 archer.update(self.platforms, self.player)
+                if archer.health <= 0:
+                    self.archers.remove(archer)
 
             if self.player.health <= 0:
                 self.state = "death"
@@ -105,8 +110,8 @@ class Game:
         self.current_level_index += 1
         if self.current_level_index < len(self.levels):
             self.load_level(self.levels[self.current_level_index])
-            self.player.holding_key = False  # Reset key possession for the new level
-            self.player.hotbar = [None] * 3  # Reset hotbar or customize as needed
+            self.player.holding_key = False
+            self.player.hotbar = [None] * 3
             print(f"Loaded Level {self.current_level_index + 1}")
         else:
             print("You've completed all levels!")
@@ -130,11 +135,12 @@ class Game:
             for ninja in self.ninjas:
                 ninja.draw(self.screen, self.camera)
 
-            for archer in self.archers:  # <-- Draw archers
+            for archer in self.archers:
                 archer.draw(self.screen, self.camera)
 
             self.player.draw(self.screen, self.camera)
             self.draw_health_bar()
+
         elif self.state == "death":
             self.draw_death_menu()
 

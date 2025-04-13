@@ -1,4 +1,7 @@
 import pygame
+from src.sword import Sword
+from src.bow import BowDrop, Projectile
+import time  # Import the time module to check the time difference
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
@@ -26,14 +29,23 @@ class Player(pygame.sprite.Sprite):
         self.health = 100
         self.weapon_offset = (20, -10)
 
+        # Direction player is facing (1 for right, -1 for left)
+        self.facing_direction = 1  # Default to facing right
+        self.has_bow = False  # Track if the player has a bow
+
+        # Cooldown management for sword attacks
+        self.last_attack_time = 0  # Initialize last attack time to 0
+
     def handle_input(self):
         keys = pygame.key.get_pressed()
         self.x_vel = 0
 
         if keys[pygame.K_LEFT]:
             self.x_vel = -self.speed
+            self.facing_direction = -1  # Facing left
         if keys[pygame.K_RIGHT]:
             self.x_vel = self.speed
+            self.facing_direction = 1  # Facing right
         if keys[pygame.K_UP] and self.on_ground:
             self.y_vel = self.jump_power
 
@@ -43,6 +55,40 @@ class Player(pygame.sprite.Sprite):
             self.equip_weapon(self.hotbar[1], 1)
         elif keys[pygame.K_3] and self.hotbar[2]:
             self.equip_weapon(self.hotbar[2], 2)
+
+    def attack(self, enemies):
+        keys = pygame.key.get_pressed()
+        if not self.holding_item:
+            return
+        
+        # Check if enough time has passed for sword attack (0.3 second cooldown)
+        current_time = time.time()  # Get the current time in seconds
+        if isinstance(self.holding_item, Sword) and keys[pygame.K_SPACE]:
+            if current_time - self.last_attack_time >= 0.3:  # 0.3 second cooldown
+                self.sword_attack(enemies)
+                self.last_attack_time = current_time  # Update the last attack time
+        elif self.has_bow and keys[pygame.K_SPACE]:  # Check if the player has a bow
+            self.bow_attack(enemies)
+
+    def sword_attack(self, enemies):
+        attack_range = 50  # How far the sword can hit
+        attack_rect = self.rect.copy()
+        attack_rect.x += self.facing_direction * attack_range
+
+        for enemy in enemies:
+            if attack_rect.colliderect(enemy.rect):
+                enemy.take_damage(10)  # Deal damage to the enemy
+                print(f"Enemy hit! Remaining health: {enemy.health}")
+
+    def bow_attack(self, enemies):
+        if self.has_bow:  # If the player has a bow
+            # Create a projectile and shoot it
+            target_x = self.pos.x + self.facing_direction * 100  # Adjust target for projectile
+            target_y = self.pos.y
+            speed = 10  # Adjust the speed of the projectile
+            projectile = Projectile(self.pos.x, self.pos.y, target_x, target_y, speed)
+            # You would want to add this projectile to a group or list to update it
+            print("Bow attack fired!")
 
     def apply_gravity(self):
         self.y_vel += self.gravity
@@ -76,22 +122,26 @@ class Player(pygame.sprite.Sprite):
                     self.rect.left = platform.rect.right
                 self.pos.x = self.rect.x
 
-    def update(self, keys, platforms, items):
+    def update(self, keys, platforms, items, enemies):
         self.handle_input()
         self.apply_gravity()
         self.check_collision(platforms)
 
         for item in items:
             if hasattr(item, "rect") and self.rect.colliderect(item.rect):
-                if item.__class__.__name__ in ["Sword", "Key", "Bow"] and not getattr(item, 'picked_up', False):
+                if item.__class__.__name__ in ["Sword", "Key", "BowDrop"] and not getattr(item, 'picked_up', False):
                     for i in range(3):
                         if self.hotbar[i] is None:
                             self.hotbar[i] = item
                             item.picked_up = True
                             self.equip_weapon(item, i)
+                            if item.__class__.__name__ == "BowDrop":  # Handle Bow pickup
+                                self.has_bow = True
                             if item.__class__.__name__ == "Key":
                                 self.holding_key = True
                             break
+
+        self.attack(enemies)
 
     def equip_weapon(self, weapon, slot):
         self.holding_item = weapon
@@ -100,10 +150,7 @@ class Player(pygame.sprite.Sprite):
     def draw(self, screen, camera):
         screen.blit(self.image, camera.apply(self))
 
-        if self.holding_item and self.holding_item.__class__.__name__ != "Key":
-            weapon_pos = (self.pos.x + self.weapon_offset[0], self.pos.y + self.weapon_offset[1])
-            screen.blit(self.holding_item.image, camera.apply_pos(weapon_pos))
-
+        # No sword drawing, removed the code that was drawing the sword
         self.draw_hotbar(screen)
 
     def draw_hotbar(self, screen):
