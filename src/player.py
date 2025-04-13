@@ -21,16 +21,15 @@ class Player(pygame.sprite.Sprite):
         self.gravity = 0.6
         self.on_ground = False
 
-        self.hotbar = [None] * 3
-        self.selected_slot = 0
-        self.holding_item = None
-        self.holding_key = False
+        self.hotbar = [None] * 3  # Hotbar with 3 slots
+        self.selected_slot = 0  # Currently selected slot
+        self.holding_item = None  # The item currently being held by the player
+        self.holding_key = False  # Tracks if the player is holding a key
 
         self.health = 100
-        self.weapon_offset = (20, -10)
+        self.weapon_offset = (20, -10)  # Offset for weapon rendering
 
-        # Direction player is facing (1 for right, -1 for left)
-        self.facing_direction = 1  # Default to facing right
+        self.facing_direction = 1  # Default facing right
         self.has_bow = False  # Track if the player has a bow
 
         # Cooldown management for sword attacks
@@ -68,7 +67,7 @@ class Player(pygame.sprite.Sprite):
                 self.sword_attack(enemies)
                 self.last_attack_time = current_time  # Update the last attack time
         elif self.has_bow and keys[pygame.K_SPACE]:  # Check if the player has a bow
-            self.bow_attack(enemies)
+            self.bow_attack()
 
     def sword_attack(self, enemies):
         attack_range = 50  # How far the sword can hit
@@ -80,7 +79,7 @@ class Player(pygame.sprite.Sprite):
                 enemy.take_damage(10)  # Deal damage to the enemy
                 print(f"Enemy hit! Remaining health: {enemy.health}")
 
-    def bow_attack(self, enemies):
+    def bow_attack(self):
         if self.has_bow:  # If the player has a bow
             # Create a projectile and shoot it
             target_x = self.pos.x + self.facing_direction * 100  # Adjust target for projectile

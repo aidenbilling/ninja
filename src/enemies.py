@@ -1,6 +1,7 @@
 import pygame
 from pygame.rect import Rect
 from src.bow import Projectile, BowDrop
+import random
 
 class Enemy:
     def __init__(self, x, y, width, height, speed):
@@ -113,6 +114,7 @@ class Archer(Enemy):
         self.shoot_delay = 2000
         self.last_shot_time = 0
         self.projectiles = []
+        self.drops = []  # List to store the drops (bows)
 
     def update(self, platforms, player):
         self.apply_gravity()
@@ -124,13 +126,22 @@ class Archer(Enemy):
             if self.can_see_player(player, platforms):
                 self.shoot(player)
 
+        # Handle projectiles and collisions
         for projectile in self.projectiles[:]:
             projectile.update(platforms)
             if projectile.check_collision(player):
                 self.projectiles.remove(projectile)
 
+        # If the archer is dead, check for a bow drop
         if self.health <= 0 and not self.drops:
-            self.drops.append(BowDrop(self.rect.centerx, self.rect.bottom))
+            self.drops.append(self.try_bow_drop())
+
+    def try_bow_drop(self):
+        # 25% chance to drop a bow
+        if random.random() < 0.25:
+            print("Bow dropped!")
+            return BowDrop(self.rect.centerx, self.rect.bottom)  # Create a bow drop at the archer's position
+        return None
 
     def follow_player(self, player):
         if abs(self.rect.centerx - player.rect.centerx) > self.shooting_range:
@@ -162,4 +173,5 @@ class Archer(Enemy):
         for projectile in self.projectiles:
             projectile.draw(screen, camera)
         for drop in self.drops:
-            drop.draw(screen, camera)
+            if drop:  # Only draw if the drop exists
+                drop.draw(screen, camera)
