@@ -90,23 +90,30 @@ class Player(pygame.sprite.Sprite):
             target_y = self.pos.y
             speed = 10  # Adjust the speed of the projectile
             projectile = Projectile(self.pos.x, self.pos.y, target_x, target_y, speed)  # Correct number of parameters
-            # Add this projectile to a group or list to update it 
+            self.projectiles.add(projectile)  # Add the projectile to the group
             print("Bow attack fired!")
 
 
-    def update_projectiles(self, enemies):
-        # Update all projectiles in the group
-        for projectile in self.projectiles:
-            projectile.update()  # Update the projectile's movement
 
-            # Check for collisions with enemies
+    def update_projectiles(self, enemies, platforms):
+        # Update all projectiles in the group
+        for projectile in list(self.projectiles):  # Make a copy for safe removal
+            projectile.update(platforms)  # Pass platforms
+
+            if not projectile.alive:
+                self.projectiles.remove(projectile)
+                continue
+
             for enemy in enemies:
                 if projectile.rect.colliderect(enemy.rect):
-                    enemy.take_damage(10, self)  # Deal damage to the enemy
-                    self.projectiles.remove(projectile)  # Remove the projectile
+                    enemy.take_damage(5, self)  # Bow damage is lower (5)
+                    self.projectiles.remove(projectile)
                     print(f"Enemy hit! Remaining health: {enemy.health}")
                     if enemy.health <= 0:
                         print("Enemy is dead!")
+                    break  # Stop checking this projectile
+
+
 
     def apply_gravity(self):
         self.y_vel += self.gravity
@@ -160,7 +167,7 @@ class Player(pygame.sprite.Sprite):
                             break
 
         self.attack(enemies)
-        self.update_projectiles(enemies)  # Update projectiles
+        self.update_projectiles(enemies, platforms)  # Update projectiles
 
     def try_add_bow(self):
         for i in range(len(self.hotbar)):
@@ -184,7 +191,7 @@ class Player(pygame.sprite.Sprite):
 
         # Draw projectiles
         for projectile in self.projectiles:
-            projectile.draw(screen)
+            projectile.draw(screen, camera)
 
     def draw_hotbar(self, screen):
         font = pygame.font.SysFont(None, 30)

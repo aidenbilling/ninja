@@ -1,22 +1,27 @@
-# bow.py
 import pygame
 
-class Projectile:
+class Projectile(pygame.sprite.Sprite):
     def __init__(self, x, y, target_x, target_y, speed):
-        self.rect = pygame.Rect(x, y, 10, 5)
-        self.speed = speed
+        super().__init__()  # Inherit from pygame.sprite.Sprite
+        self.image = pygame.Surface((10, 5))  # Example projectile size
+        self.image.fill((255, 0, 0))  # Red color for the projectile
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        
+        # Calculate direction of the projectile
         direction = pygame.math.Vector2(target_x - x, target_y - y)
         if direction.length() != 0:
             self.direction = direction.normalize()
         else:
             self.direction = pygame.math.Vector2(0, 0)
-        self.vel = self.direction * self.speed
-        self.alive = True  # Add a flag for deletion
+        
+        self.vel = self.direction * speed
+        self.alive = True  # Flag for deletion
 
     def update(self, platforms):
         if not self.alive:
             return
-
+        
         self.rect.x += self.vel.x
         self.rect.y += self.vel.y
 
@@ -28,6 +33,7 @@ class Projectile:
 
     def draw(self, screen, camera):
         if self.alive:
+            # Draw the projectile, assuming camera applies transformation to coordinates
             pygame.draw.rect(screen, (255, 0, 0), camera.apply(self))
 
     def check_collision(self, player):
@@ -49,9 +55,11 @@ class Bow(pygame.sprite.Sprite):
 
     def shoot(self, player, projectiles_group):
         direction = player.facing_direction  # Get the direction player is facing
+        
         # Determine target coordinates for the projectile
-        target_x = player.rect.centerx + direction * 100  # Fire 100 units ahead in facing direction
+        target_x = player.rect.centerx + direction * 100  # Fire 100 units ahead in the facing direction
         target_y = player.rect.centery
+        
         # Create and add the projectile to the projectiles group
         projectile = Projectile(player.rect.centerx, player.rect.centery, target_x, target_y, self.projectile_speed)
         projectiles_group.add(projectile)

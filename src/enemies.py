@@ -50,6 +50,18 @@ class Enemy:
         self.move()
         self.check_collisions(platforms)
 
+    def has_ground_ahead(self, platforms, direction, distance=5):
+        """ Check if there is ground ahead in the given direction """
+        check_rect = self.rect.copy()
+        check_rect.x += direction * distance
+        check_rect.y += 1  # Move it 1 pixel down to detect the platform below
+
+        for platform in platforms:
+            if check_rect.colliderect(platform.rect):
+                return True
+        return False
+
+
     def take_damage(self, amount, player=None):
         self.health -= amount
         if self.health <= 0:
@@ -91,9 +103,14 @@ class Ninja(Enemy):
                 break
 
         if line_clear:
-            self.vel_x = self.speed * step
+            # Check ground before moving
+            if self.has_ground_ahead(platforms, step):
+                self.vel_x = self.speed * step
+            else:
+                self.vel_x = 0
         else:
             self.vel_x = 0
+
 
     def damage_player(self, player):
         current_time = pygame.time.get_ticks()
@@ -118,7 +135,7 @@ class Archer(Enemy):
 
     def update(self, platforms, player):
         self.apply_gravity()
-        self.follow_player(player)
+        self.follow_player(player, platforms)
         self.move()
         self.check_collisions(platforms)
 
@@ -132,11 +149,18 @@ class Archer(Enemy):
             if projectile.check_collision(player):
                 self.projectiles.remove(projectile)
 
-    def follow_player(self, player):
-        if abs(self.rect.centerx - player.rect.centerx) > self.shooting_range:
-            self.vel_x = self.speed if self.rect.centerx < player.rect.centerx else -self.speed
+    def follow_player(self, player, platforms):
+        distance = player.rect.centerx - self.rect.centerx
+        step = 1 if distance > 0 else -1
+
+        if abs(distance) > self.shooting_range:
+            if self.has_ground_ahead(platforms, step):
+                self.vel_x = self.speed * step
+            else:
+                self.vel_x = 0
         else:
             self.vel_x = 0
+
 
     def can_see_player(self, player, platforms):
         line_clear = True

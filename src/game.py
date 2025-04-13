@@ -4,9 +4,10 @@ from src.sword import Sword
 from src.enemies import Ninja, Archer
 from src.game_platform import Platform
 from src.camera import Camera
-from src.levels import level_1, level_2
+from src.levels import level_1, level_2, level_3
 from src.key import Key
 from src.door import Door
+from src.bow import Bow
 
 class Game:
     def __init__(self):
@@ -15,14 +16,15 @@ class Game:
         self.WHITE = (255, 255, 255)
 
         self.screen = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
-        pygame.display.set_caption("Ninja Man Prototype")
+        pygame.display.set_caption("Ninja Man 1")
 
         self.clock = pygame.time.Clock()
         self.camera = Camera(self.WIDTH, self.HEIGHT, 1600, 1200)
 
         self.state = "menu"
-        self.menu_options = ["Play", "Options", "Exit"]
+        self.menu_options = ["Play", "Controls", "Exit"]
         self.selected_option = 0
+        self.menu_timer = 0
 
         self.platforms = []
         self.items = []
@@ -30,14 +32,21 @@ class Game:
         self.archers = []
         self.player = Player(self.WIDTH // 2, self.HEIGHT - 100)
 
-        self.levels = [level_1, level_2]
+        self.levels = [level_1, level_2, level_3]
         self.current_level_index = 0
 
+        # Initialize projectile list
+        self.projectiles = []
+
     def handle_menu(self, keys):
-        if keys[pygame.K_UP]:
-            self.selected_option = max(0, self.selected_option - 1)
-        elif keys[pygame.K_DOWN]:
-            self.selected_option = min(len(self.menu_options) - 1, self.selected_option + 1)
+        # Gradual movement for option selection
+        if self.menu_timer <= 0:
+            if keys[pygame.K_1]:
+                self.selected_option = 0
+            elif keys[pygame.K_2]:
+                self.selected_option = 1
+            elif keys[pygame.K_3]:
+                self.selected_option = 2
 
         if keys[pygame.K_RETURN]:
             if self.selected_option == 0:
@@ -45,10 +54,27 @@ class Game:
                 self.current_level_index = 0
                 self.load_level(self.levels[self.current_level_index])
             elif self.selected_option == 1:
-                print("Options menu is not implemented yet.")
+                self.state = "controls"  # Go to controls menu
             elif self.selected_option == 2:
                 pygame.quit()
                 quit()
+
+    def load_controls_menu(self):
+        # Simple controls display in the controls menu
+        font = pygame.font.SysFont(None, 40)
+        controls_text = [
+            "Arrow keys - Movement",
+            "Space - Use item",
+        ]
+
+        y_offset = 100
+        for text in controls_text:
+            control_text = font.render(text, True, (0, 0, 0))
+            self.screen.blit(control_text, (self.WIDTH // 2 - control_text.get_width() // 2, y_offset))
+            y_offset += 50
+
+        back_text = font.render("Press [Esc] to return", True, (0, 0, 0))
+        self.screen.blit(back_text, (self.WIDTH // 2 - back_text.get_width() // 2, y_offset))
 
     def load_level(self, level_layout):
         self.platforms.clear()
@@ -77,6 +103,8 @@ class Game:
             self.player.rect.bottom = self.platforms[0].rect.top
             self.player.pos = pygame.math.Vector2(self.player.rect.topleft)
 
+        self.player.health = 100
+
     def update(self):
         keys = pygame.key.get_pressed()
         if self.state == "menu":
@@ -86,6 +114,10 @@ class Game:
 
             if keys[pygame.K_SPACE] and self.player.holding_item and isinstance(self.player.holding_item, Sword):
                 self.player.attack(self.ninjas + self.archers)
+
+            # Handle projectile shooting
+            if keys[pygame.K_f] and self.player.holding_item and isinstance(self.player.holding_item, Bow):
+                self.player.shoot_projectile(self.projectiles)
 
             for item in self.items:
                 if isinstance(item, Door):
@@ -103,8 +135,18 @@ class Game:
                 if archer.health <= 0:
                     self.archers.remove(archer)
 
+            # Update projectiles
+            for projectile in self.projectiles[:]:
+                projectile.update()
+                if projectile.rect.x < 0 or projectile.rect.x > self.WIDTH:
+                    self.projectiles.remove(projectile)
+
             if self.player.health <= 0:
                 self.state = "death"
+
+        elif self.state == "controls":
+            if keys[pygame.K_ESCAPE]:  # Exit the controls menu
+                self.state = "menu"
 
     def advance_level(self):
         self.current_level_index += 1
@@ -139,10 +181,17 @@ class Game:
                 archer.draw(self.screen, self.camera)
 
             self.player.draw(self.screen, self.camera)
+
+            # Draw projectiles
+            for projectile in self.projectiles:
+                pygame.draw.rect(self.screen, (255, 0, 0), projectile.rect)
+
             self.draw_health_bar()
 
         elif self.state == "death":
             self.draw_death_menu()
+        elif self.state == "controls":
+            self.load_controls_menu()
 
         pygame.display.flip()
 
@@ -153,7 +202,7 @@ class Game:
 
     def draw_menu(self):
         font = pygame.font.SysFont(None, 50)
-        title_text = font.render("Ninja Man Prototype", True, (0, 0, 0))
+        title_text = font.render("Ninja Man 1", True, (0, 0, 0))
         self.screen.blit(title_text, (self.WIDTH // 2 - title_text.get_width() // 2, 100))
 
         option_font = pygame.font.SysFont(None, 30)
@@ -187,11 +236,29 @@ class Game:
                 if keys[pygame.K_r]:
                     self.state = "menu"
                     self.player.health = 100
+                    self.player.holding_key = False
+                    self.player.hotbar = [None] * 3
 
             self.update()
             self.draw()
 
         pygame.quit()
+
+
+class Projectile(pygame.sprite.Sprite):
+    def __init__(self, x, y, direction):
+        super().__init__()
+        self.image = pygame.Surface((10, 5))
+        self.image.fill((255, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.direction = direction
+
+    def update(self):
+        self.rect.x += self.direction * 10
+        if self.rect.x < 0 or self.rect.x > 800:  # Remove if it goes out of bounds
+            self.kill()
+
 
 if __name__ == "__main__":
     game = Game()
