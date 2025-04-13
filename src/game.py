@@ -7,6 +7,7 @@ from src.camera import Camera
 from src.levels import level_1, level_2
 from src.key import Key
 from src.door import Door
+from src.bow import BowDrop  # Import BowDrop
 
 class Game:
     def __init__(self):
@@ -72,6 +73,8 @@ class Game:
                     self.ninjas.append(Ninja(x, y, 50, 50, 1))
                 elif tile == "A":
                     self.archers.append(Archer(x, y, 50, 50, 1))
+                elif tile == "B":  # Add bow drop
+                    self.items.append(BowDrop(x, y))
 
         if self.platforms:
             self.player.rect.bottom = self.platforms[0].rect.top

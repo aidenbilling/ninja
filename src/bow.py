@@ -35,16 +35,33 @@ class Projectile:
             return True
         return False
 
+class Bow:
+    def __init__(self):
+        self.image = pygame.Surface((20, 20))
+        self.image.fill((139, 69, 19))  # Brown bow color
+        self.projectile_speed = 10
+
+    def shoot(self, player, projectiles_group):
+        direction = player.facing  # Assuming 'facing' is "left" or "right"
+        projectile = Projectile(player.rect.centerx, player.rect.centery, direction, self.projectile_speed)
+        projectiles_group.add(projectile)
+
+
 class BowDrop:
-    def __init__(self, x, y):
-        self.rect = pygame.Rect(x, y, 20, 10)
-        self.collected = False
+    def __init__(self, player):
+        self.player = player
+        # Check if there is an empty slot in the player's hotbar or inventory
+        if self.add_bow_to_inventory():
+            print("Bow added to inventory!")
+        else:
+            print("No empty slots in the inventory.")
 
-    def draw(self, screen, camera):
-        if not self.collected:
-            pygame.draw.rect(screen, (150, 75, 0), camera.apply(self))
+    def add_bow_to_inventory(self):
+        # Check for an empty slot and add the bow to the inventory
+        for i in range(len(self.player.hotbar)):
+            if self.player.hotbar[i] is None:  # Assuming None means empty slot
+                self.player.hotbar[i] = "Bow"  # Add a bow to the hotbar
+                return True
+        return False
 
-    def check_pickup(self, player):
-        if self.rect.colliderect(player.rect):
-            self.collected = True
-            player.has_bow = True
+

@@ -2,6 +2,7 @@ import pygame
 from pygame.rect import Rect
 from src.bow import Projectile, BowDrop
 import random
+from src.player import Player
 
 class Enemy:
     def __init__(self, x, y, width, height, speed):
@@ -13,7 +14,6 @@ class Enemy:
         self.gravity = 0.5
         self.max_speed = 3
         self.health = 30  # Sword does 10 damage -> 3 hits to kill
-        self.drops = []
 
     def apply_gravity(self):
         self.vel_y += self.gravity
@@ -50,13 +50,14 @@ class Enemy:
         self.move()
         self.check_collisions(platforms)
 
-    def take_damage(self, amount):
+    def take_damage(self, amount, player=None):
         self.health -= amount
         if self.health <= 0:
-            self.kill()
+            self.kill(player)
 
-    def kill(self):
-        del self
+    def kill(self, player=None):
+        # Default enemy drops nothing
+        pass
 
 class Ninja(Enemy):
     def __init__(self, x, y, width, height, speed):
@@ -114,7 +115,6 @@ class Archer(Enemy):
         self.shoot_delay = 2000
         self.last_shot_time = 0
         self.projectiles = []
-        self.drops = []  # List to store the drops (bows)
 
     def update(self, platforms, player):
         self.apply_gravity()
@@ -132,46 +132,53 @@ class Archer(Enemy):
             if projectile.check_collision(player):
                 self.projectiles.remove(projectile)
 
-        # If the archer is dead, check for a bow drop
-        if self.health <= 0 and not self.drops:
-            self.drops.append(self.try_bow_drop())
-
-    def try_bow_drop(self):
-        # 25% chance to drop a bow
-        if random.random() < 0.25:
-            print("Bow dropped!")
-            return BowDrop(self.rect.centerx, self.rect.bottom)  # Create a bow drop at the archer's position
-        return None
-
     def follow_player(self, player):
         if abs(self.rect.centerx - player.rect.centerx) > self.shooting_range:
             self.vel_x = self.speed if self.rect.centerx < player.rect.centerx else -self.speed
         else:
             self.vel_x = 0
 
+    def can_see_player(self, player, platforms):
+        line_clear = True
+        for platform in platforms:
+            if platform.rect.clipline(self.rect.center, player.rect.center):
+                line_clear = False
+                break
+        return line_clear
+
     def shoot(self, player):
-        projectile = Projectile(self.rect.centerx, self.rect.centery, player.rect.centerx, player.rect.centery, 5)
+        projectile = Projectile(self.rect.centerx, self.rect.centery, player.rect.centerx, player.rect.centery, speed=7)
         self.projectiles.append(projectile)
         self.last_shot_time = pygame.time.get_ticks()
 
-    def can_see_player(self, player, platforms):
-        line_clear = True
-        test_rect = self.rect.copy()
-        step = 5 if self.rect.centerx < player.rect.centerx else -5
-        for x in range(self.rect.centerx, player.rect.centerx, step):
-            test_rect.centerx = x
-            for platform in platforms:
-                if platform.rect.clipline(self.rect.center, player.rect.center):
-                    line_clear = False
-                    break
-            if not line_clear:
-                break
-        return line_clear
+    def kill(self, player):
+        print("Archer is being killed!")  # Debugging line
+        print(f"Player is: {player}")  # Debugging line
+        chance = random.random()
+        print(f"Drop chance: {chance}")  # Debugging line
+
+        if player is None:
+            print("No player found, bow won't be added.")
+            return  # If player is None, return early
+
+        if chance < 0.25:
+            bow_added = BowDrop(player)  # Passing player to BowDrop
+            if bow_added:
+                print("Archer dropped a bow! Added to hotbar.")
+            else:
+                print("Archer dropped a bow, but inventory was full.")
+        else:
+            print("Archer did not drop a bow.")
+
+
+
+
+
+
+
 
     def draw(self, screen, camera):
         screen.blit(self.image, camera.apply(self))
         for projectile in self.projectiles:
             projectile.draw(screen, camera)
-        for drop in self.drops:
-            if drop:  # Only draw if the drop exists
-                drop.draw(screen, camera)
+
