@@ -17,6 +17,7 @@ class Player(pygame.sprite.Sprite):
         self.jump_power = -12
         self.gravity = 0.6
         self.on_ground = False
+
         self.hotbar = [None] * 3
         self.selected_slot = 0
         self.holding_item = None
@@ -82,22 +83,15 @@ class Player(pygame.sprite.Sprite):
 
         for item in items:
             if hasattr(item, "rect") and self.rect.colliderect(item.rect):
-                if item.__class__.__name__ == "Sword" and not item.picked_up:
+                if item.__class__.__name__ in ["Sword", "Key", "Bow"] and not getattr(item, 'picked_up', False):
                     for i in range(3):
                         if self.hotbar[i] is None:
                             self.hotbar[i] = item
                             item.picked_up = True
                             self.equip_weapon(item, i)
+                            if item.__class__.__name__ == "Key":
+                                self.holding_key = True
                             break
-                elif item.__class__.__name__ == "Key" and not item.picked_up:
-                    for i in range(3):
-                        if self.hotbar[i] is None:
-                            self.hotbar[i] = item
-                            item.picked_up = True
-                            self.equip_weapon(item, i)
-                            self.holding_key = True
-                            break
-
 
     def equip_weapon(self, weapon, slot):
         self.holding_item = weapon
@@ -107,9 +101,8 @@ class Player(pygame.sprite.Sprite):
         screen.blit(self.image, camera.apply(self))
 
         if self.holding_item and self.holding_item.__class__.__name__ != "Key":
-            sword_pos = (self.pos.x + self.weapon_offset[0], self.pos.y + self.weapon_offset[1])
-            screen.blit(self.holding_item.image, camera.apply_pos(sword_pos))
-
+            weapon_pos = (self.pos.x + self.weapon_offset[0], self.pos.y + self.weapon_offset[1])
+            screen.blit(self.holding_item.image, camera.apply_pos(weapon_pos))
 
         self.draw_hotbar(screen)
 

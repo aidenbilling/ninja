@@ -10,17 +10,28 @@ class Projectile:
         else:
             self.direction = pygame.math.Vector2(0, 0)
         self.vel = self.direction * self.speed
+        self.alive = True  # Add a flag for deletion
 
-    def update(self):
+    def update(self, platforms):
+        if not self.alive:
+            return
+
         self.rect.x += self.vel.x
         self.rect.y += self.vel.y
 
+        for platform in platforms:
+            if self.rect.colliderect(platform.rect):
+                self.alive = False  # Mark for removal on collision
+                break
+
     def draw(self, screen, camera):
-        pygame.draw.rect(screen, (255, 0, 0), camera.apply(self))
+        if self.alive:
+            pygame.draw.rect(screen, (255, 0, 0), camera.apply(self))
 
     def check_collision(self, player):
         if self.rect.colliderect(player.rect):
             player.health -= 10
+            self.alive = False  # Destroy the projectile when hitting the player
             return True
         return False
 
